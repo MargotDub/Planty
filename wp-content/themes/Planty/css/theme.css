@@ -23,7 +23,7 @@ p {
 }
 
 #site-header img {
-    margin-left: 31px;
+    margin-left: 37px;
 }
 
 #site-header a {
@@ -43,8 +43,7 @@ p {
 }
 
 #menu-item-42 a, #menu-item-41 a {
-    margin-right: 31px;
-    margin-left: 31px
+    margin-right: 70px;
 }
 
 #menu-item-42 a:hover, #menu-item-41 a:hover {
@@ -54,7 +53,7 @@ p {
 #menu-item-40 a {
     color: #FFFFFF !important;
     background-color: #DC9F96;
-    padding: 31px 80px 31px 80px;
+    padding: 31px 70px 31px 70px;
     font-weight: 600;
 }
 
