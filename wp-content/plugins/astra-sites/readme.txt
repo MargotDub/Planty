@@ -3,9 +3,9 @@ Contributors: brainstormforce
 Donate link: https://wpastra.com/pro/
 Tags: Elementor,Beaver Builder,Templates,Gutenberg,Block Editor,Astra Starter Sites
 Requires at least: 4.4
-Requires PHP: 5.3
+Requires PHP: 7.4
 Tested up to: 6.4
-Stable tag: 3.5.2
+Stable tag: 4.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,7 +48,7 @@ Businesses like restaurants, lawyers, agencies, interior designers, artist shops
 - [Beaver Builder Free Website Templates](https://wpastra.com/ready-websites/?page-builder=beaver-builder&category=free)
 - [Block Editor Free Website Templates](https://wpastra.com/ready-websites/?page-builder=gutenberg&category=free)
 
-You can extend this library with premium ready-to-use website demos by purchasing one of the Astra Bundles, i.e. either the Essential Bundle or the Growth Bundle.
+You can extend this library with premium ready-to-use website demos by purchasing one of the Essential or Business Toolkits.
 
 = WHY PEOPLE LOVE THE ASTRA THEME? =
 
@@ -134,6 +134,39 @@ We are open to suggestions and would love to work on topics that our users are l
 8. Free Images by Pixabay right inside the WordPress media popup.
 
 == Changelog ==
+
+v4.0.1 - 04-January-2024
+- Fix: Fixed an issue where the CSS looked messed up after importing using AI Website Builder.
+
+v4.0.0 - 03-January-2024
+- New: AI Website Builder.
+- Fix: Tightened the plugin security.
+
+v3.5.7 - 30-December-2023
+- Fix: Fixed Template Kit library conflict ( 503 Error ) with Gravity Form plugin.
+
+v3.5.6 - 27-December-2023
+- New: Expanded the Template Kit Library by introducing site templates for an enriched selection of design options.
+- Improvement: Enhanced the WordPress Dashboard banner for improved visibility.
+- Improvement: Streamlined compatibility by discontinuing support for PHP versions below 7.4
+- Fix: Fixed the persistent customizer CSS issue in non-adaptive mode within the Template Kit Library.
+- Fix: Enhanced compatibility in Template Kits Library to ensure seamless template display even when Spectra is activated midway through the import process.
+
+v3.5.5 - 19-December-2023
+- Improvement: User Interface improvements for the Template Kit library.
+- Improvement: Downloading the selected images in the onboarding of the Template Kit library to media.
+- Improvement: The Disable AI option in the Template Kit library will be similar to the Manage AI feature option in Spectra.
+- Improvement: Updating Disable AI option value based on Non-Adaptive mode option in Template Kit library.
+- Fix: The non-Adaptive mode option of the Template Kit library was not getting enabled after reloading the page.
+
+v3.5.4 - 15-December-2023
+- Fix: Generate Content with the AI button was not showing in the Template Kit library if a user is already authorized to ZipAI.
+- Fix: Patterns & Pages preview from Template Kit was not compatible with RTL.
+- Fix: Fixed an issue where the translation was working on some screens.
+
+v3.5.3 - 13-December-2023
+- New: Introduced Non-adaptive mode option in Template Kit library.
+- Improvement: Added default line-height to heading tag in Template Kit library for a better preview of patterns and pages.
 
 v3.5.2 - 07-December-2023
 - New: All new AI based Template Kit library.

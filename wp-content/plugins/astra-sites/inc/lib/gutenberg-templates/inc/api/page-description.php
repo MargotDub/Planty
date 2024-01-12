@@ -3,7 +3,7 @@
  * PageDescription API.
  *
  * @package {{package}}
- * @since x.x.x
+ * @since 2.0.16
  */
 
 namespace Gutenberg_Templates\Inc\Api;
@@ -19,7 +19,7 @@ use Gutenberg_Templates\Inc\Importer\Importer_Helper;
 /**
  * Progress
  *
- * @since x.x.x
+ * @since 2.0.16
  */
 class PageDescription extends Api_Base {
 
@@ -35,7 +35,7 @@ class PageDescription extends Api_Base {
 	/**
 	 * Init Hooks.
 	 *
-	 * @since x.x.x
+	 * @since 2.0.16
 	 * @return void
 	 */
 	public function register_routes() {

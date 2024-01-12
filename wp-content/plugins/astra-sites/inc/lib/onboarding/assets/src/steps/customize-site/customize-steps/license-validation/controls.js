@@ -168,7 +168,9 @@ const LicenseValidationControls = () => {
 								className={ `validate-btn ${ processingClass }` }
 								onClick={ validateKey }
 							>
-								{ ICONS.arrowRightBold }
+								{ ! processing
+									? ICONS.arrowRightBold
+									: ICONS.spinner }
 							</Button>
 						</div>
 					) }

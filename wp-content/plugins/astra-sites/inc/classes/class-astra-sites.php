@@ -137,7 +137,6 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 			add_action( 'astra_notice_before_markup', array( $this, 'notice_assets' ) );
 			add_action( 'load-index.php', array( $this, 'admin_dashboard_notices' ) );
 			add_action( 'admin_notices', array( $this, 'check_filesystem_access_notice' ) );
-
 			// AJAX.
 			$this->ajax = array(
 				'astra-required-plugins' => 'required_plugin',
@@ -154,6 +153,7 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 				'astra-sites-getting-started-notice' => 'getting_started_notice',
 				'astra-sites-favorite' => 'add_to_favorite',
 				'astra-sites-api-request' => 'api_request',
+				'astra-sites-ai-api-request' => 'ai_api_request',
 				'astra-sites-elementor-api-request' => 'elementor_api_request',
 				'astra-sites-elementor-flush-request' => 'elementor_flush_request',
 				'astra-page-elementor-insert-page' => 'elementor_process_import_for_page',
@@ -172,9 +172,8 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 			add_filter( 'status_header', array( $this, 'status_header' ), 10, 4 );
 			add_filter( 'wp_php_error_message', array( $this, 'php_error_message' ), 10, 2 );
 			add_filter( 'wp_import_post_data_processed', array( $this, 'wp_slash_after_xml_import' ), 99, 2 );
-			add_filter( 'zip_ai_enable_chat_sidebar', array( $this, 'disable_zip_ai_assistant' ) );
+			add_filter( 'zip_ai_modules', array( $this, 'enable_zip_ai_copilot' ), 999, 1 );
 			add_filter( 'ast_block_templates_authorization_url_param', array( $this, 'add_auth_url_param' ) );
-
 		}
 
 		/**
@@ -192,20 +191,30 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 		}
 
 		/**
-		 * Disable ZipAI Assistant.
+		 * Enable ZipAI Copilot.
 		 *
 		 * @since 3.5.0
 		 *
+		 * @param array $modules module array.
 		 * @return boolean
 		 */
-		public function disable_zip_ai_assistant() {
-
+		public function enable_zip_ai_copilot( $modules ) {
+			
 			if ( 'active' === $this->get_plugin_status( 'ultimate-addons-for-gutenberg/ultimate-addons-for-gutenberg.php' ) ) {
-				return true;
+				return $modules;
 			}
-
-			return false;
+			
+			// Ensure $modules is an array.
+			$modules = is_array( $modules ) ? $modules : array();
+		
+			// Update AI Design Copilot module status.
+			$modules['ai_design_copilot'] = array(
+				'status' => 'enabled',
+			);
+		
+			return $modules;
 		}
+		
 
 		/**
 		 * Get plugin status
@@ -594,6 +603,125 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 				wp_send_json_error(
 					array(
 						/* Translators: %s is API URL. */
+						'message' => sprintf( __( 'Invalid API Request URL - %s', 'astra-sites' ), $api_url ),
+						'code'    => 'Error',
+					)
+				);
+			}
+
+			Astra_Sites_Error_Handler::get_instance()->start_error_handler();
+
+			$api_args = apply_filters(
+				'astra_sites_api_args', array(
+					'timeout' => 15,
+				)
+			);
+
+			$request = wp_remote_get( $api_url, $api_args );
+
+			Astra_Sites_Error_Handler::get_instance()->stop_error_handler();
+
+			if ( is_wp_error( $request ) ) {
+				$wp_error_code = $request->get_error_code();
+				switch ( $wp_error_code ) {
+					case 'http_request_not_executed':
+						/* translators: %s Error Message */
+						$message = sprintf( __( 'API Request could not be performed - %s', 'astra-sites' ), $request->get_error_message() );
+						break;
+					case 'http_request_failed':
+					default:
+						/* translators: %s Error Message */
+						$message = sprintf( __( 'API Request has failed - %s', 'astra-sites' ), $request->get_error_message() );
+						break;
+				}
+
+				wp_send_json_error(
+					array(
+						'message'       => $request->get_error_message(),
+						'code'          => 'WP_Error',
+						'response_code' => $wp_error_code,
+					)
+				);
+			}
+
+			$code      = (int) wp_remote_retrieve_response_code( $request );
+			$demo_data = json_decode( wp_remote_retrieve_body( $request ), true );
+
+			if ( 200 === $code ) {
+				update_option( 'astra_sites_import_data', $demo_data, 'no' );
+				wp_send_json_success( $demo_data );
+			}
+
+			$message       = wp_remote_retrieve_body( $request );
+			$response_code = $code;
+
+			if ( 200 !== $code && is_array( $demo_data ) && isset( $demo_data['code'] ) ) {
+				$message = $demo_data['message'];
+			}
+
+			if ( 500 === $code ) {
+				$message = __( 'Internal Server Error.', 'astra-sites' );
+			}
+
+			if ( 200 !== $code && false !== strpos( $message, 'Cloudflare' ) ) {
+				$ip = Astra_Sites_Helper::get_client_ip();
+				/* translators: %s IP address. */
+				$message = sprintf( __( 'Client IP: %1$s </br> Error code: %2$s', 'astra-sites' ), $ip, $code );
+				$code    = 'Cloudflare';
+			}
+
+			wp_send_json_error(
+				array(
+					'message'       => $message,
+					'code'          => $code,
+					'response_code' => $response_code,
+				)
+			);
+		}
+
+		/**
+		 * API Request
+		 *
+		 * @since 4.0.0
+		 */
+		public function ai_api_request() {
+
+			// Verify Nonce.
+			check_ajax_referer( 'astra-sites', '_ajax_nonce' );
+
+			if ( ! current_user_can( 'edit_posts' ) ) {
+				wp_send_json_error();
+			}
+
+			$url = isset( $_POST['url'] ) ? sanitize_text_field( $_POST['url'] ) : '';
+			$uuid = isset( $_POST['uuid'] ) ? sanitize_text_field( $_POST['uuid'] ) : '';
+
+			update_option( 'ast_ai_import_current_url', $url );
+			update_option( 'astra_sites_batch_process_complete', 'no' );
+
+			if ( empty( $url ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Provided API URL is empty! Please try again!', 'astra-sites' ),
+						'code'    => 'Error',
+					)
+				);
+			}
+
+			$api_args = apply_filters(
+				'astra_sites_api_params', array(
+					'uuid' => $uuid,
+				)
+			);
+
+			$api_args = array();
+
+			$api_url = add_query_arg( $api_args, trailingslashit( $url ) . 'wp-json/zipwp-client/v1/exporter/export' );
+
+			if ( ! astra_sites_is_valid_url( $api_url ) ) {
+				wp_send_json_error(
+					array(
+						/* Translators: %s is API URL. */
 						'message' => sprintf( __( 'Invalid Request URL - %s', 'astra-sites' ), $api_url ),
 						'code'    => 'Error',
 					)
@@ -708,7 +836,7 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 			if ( ! astra_sites_is_valid_url( $api_url ) ) {
 				wp_send_json_error(
 					array(
-						/* Translators: %s is API URL. */
+						/* Translators: %s is Request URL. */
 						'message' => sprintf( __( 'Invalid Request URL - %s', 'astra-sites' ), $api_url ),
 						'code'    => 'Error',
 					)
@@ -1491,7 +1619,42 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 		 * @since 1.0.1
 		 */
 		public function load_textdomain() {
-			load_plugin_textdomain( 'astra-sites' );
+			// Default languages directory.
+			$lang_dir = ASTRA_PRO_SITES_DIR . 'languages/';
+
+			// Traditional WordPress plugin locale filter.
+			global $wp_version;
+
+			$get_locale = get_locale();
+
+			if ( $wp_version >= 4.7 ) {
+				$get_locale = get_user_locale();
+			}
+
+			/**
+			 * Language Locale for plugin
+			 *
+			 * @var $get_locale The locale to use.
+			 * Uses get_user_locale()` in WordPress 4.7 or greater,
+			 * otherwise uses `get_locale()`.
+			 */
+			$locale = apply_filters( 'plugin_locale', $get_locale, 'astra-sites' );
+			$mofile = sprintf( '%1$s-%2$s.mo', 'astra-sites', $locale );
+
+			// Setup paths to current locale file.
+			$mofile_global = WP_LANG_DIR . '/plugins/' . $mofile;
+			$mofile_local  = $lang_dir . $mofile;
+
+			if ( file_exists( $mofile_global ) ) {
+				// Look in global /wp-content/languages/astra-sites/ folder.
+				load_textdomain( 'astra-sites', $mofile_global );
+			} elseif ( file_exists( $mofile_local ) ) {
+				// Look in local /wp-content/plugins/astra-sites/languages/ folder.
+				load_textdomain( 'astra-sites', $mofile_local );
+			} else {
+				// Load the default language files.
+				load_plugin_textdomain( 'astra-sites', false, $lang_dir );
+			}
 		}
 
 		/**
@@ -1625,6 +1788,7 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 			);
 
 			wp_enqueue_style( 'astra-sites-images', ASTRA_SITES_URI . 'inc/assets/css/images.css', ASTRA_SITES_VER, true );
+			wp_set_script_translations( 'astra-sites-images', 'astra-sites' );
 			wp_style_add_data( 'astra-sites-images', 'rtl', 'replace' );
 		}
 
@@ -1693,6 +1857,7 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 
 			// Admin Page.
 			wp_enqueue_style( 'astra-sites-admin', ASTRA_SITES_URI . 'inc/assets/css/admin.css', ASTRA_SITES_VER, true );
+			wp_set_script_translations( 'astra-sites-admin', 'astra-sites' );
 			wp_style_add_data( 'astra-sites-admin', 'rtl', 'replace' );
 
 			$data = $this->get_local_vars();
@@ -1793,6 +1958,8 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 				$surecart_store_exist = \SureCart\Models\ApiToken::get();
 			}
 
+			$plans = Astra_Sites_ZipWP_Integration::get_instance()->get_zip_plans();
+
 			$data = apply_filters(
 				'astra_sites_localize_vars',
 				array(
@@ -1887,10 +2054,171 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 					/* translators: %s Anchor link to support URL. */
 					'support_text' => sprintf( __( 'Please report this error %1$shere%2$s, so we can fix it.', 'astra-sites' ), '<a href="https://wpastra.com/support/open-a-ticket/" target="_blank">', '</a>' ),
 					'surecart_store_exists' => isset( $surecart_store_exist ) ? $surecart_store_exist : false,
+					'default_ai_categories' => $this->get_default_ai_categories(),
+					'block_color_palette'     => $this->get_block_palette_colors(),
+					'page_color_palette'      => $this->get_page_palette_colors(),
+					'rest_api_nonce' => ( current_user_can( 'manage_options' ) ) ? wp_create_nonce( 'wp_rest' ) : '',
+					'zip_token_exists' => Astra_Sites_ZipWP_Helper::get_token() !== '' ? true : false,
+					'zip_plans' => ( $plans && isset( $plans['data'] ) ) ? $plans['data'] : array(),
 				)
 			);
 
 			return $data;
+		}
+
+		/**
+		 * Get palette colors
+		 *
+		 * @since 4.0.0
+		 *
+		 * @return mixed
+		 */
+		public function get_page_palette_colors() { 
+			$default_palette_color = array(
+				'#046bd2',
+				'#045cb4',
+				'#1e293b',
+				'#334155',
+				'#f9fafb',
+				'#FFFFFF',
+				'#e2e8f0',
+				'#cbd5e1',
+				'#94a3b8',
+			);
+
+			if ( class_exists( 'Astra_Global_Palette' ) ) {
+				$astra_palette_colors = astra_get_palette_colors();
+				$default_palette_color = $astra_palette_colors['palettes'][ $astra_palette_colors['currentPalette'] ];
+			}
+
+			$palette_one = $default_palette_color;
+
+			$palette_two = array(
+				$default_palette_color[0],
+				$default_palette_color[1],
+				$default_palette_color[5],
+				$default_palette_color[4],
+				$default_palette_color[3],
+				$default_palette_color[2],
+				$default_palette_color[6],
+				$default_palette_color[7],
+				$default_palette_color[8],
+			);
+
+			$color_palettes = array(
+				'style-1' =>
+				array(
+					'slug' => 'style-1',
+					'title' => 'Light',
+					'default_color' => $default_palette_color[4],
+					'colors' => $palette_one,
+				),
+				'style-2' => array(
+					'slug' => 'style-2',
+					'title' => 'Dark',
+					'default_color' => '#1E293B',
+					'colors' => $palette_two,
+				),
+			);
+
+			return $color_palettes;
+		}
+
+		/**
+		 * Get default AI categories.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @return array
+		 */
+		public function get_default_ai_categories() {
+			return array(
+				'business' => 'Business',
+				'person' => 'Person',
+				'organisation' => 'Organisation',
+				'restaurant' => 'Restaurant',
+				'product' => 'Product',
+				'event' => 'Event',
+				'landing-page' => 'Landing Page',
+				'medical' => 'Medical',
+			);
+		}
+
+		/**
+		 * Get palette colors
+		 *
+		 * @since 4.0.0
+		 *
+		 * @return mixed
+		 */
+		public function get_block_palette_colors() { 
+			$default_palette_color = array(
+				'#046bd2',
+				'#045cb4',
+				'#1e293b',
+				'#334155',
+				'#f9fafb',
+				'#FFFFFF',
+				'#e2e8f0',
+				'#cbd5e1',
+				'#94a3b8',
+			);
+
+			if ( class_exists( 'Astra_Global_Palette' ) ) {
+				$astra_palette_colors = astra_get_palette_colors();
+				$default_palette_color = $astra_palette_colors['palettes'][ $astra_palette_colors['currentPalette'] ];
+			}
+
+			$palette_one = array(
+				$default_palette_color[0],
+				$default_palette_color[1],
+				$default_palette_color[2],
+				$default_palette_color[3],
+				$default_palette_color[5],
+				$default_palette_color[5],
+				$default_palette_color[6],
+				$default_palette_color[7],
+				$default_palette_color[8],
+			);
+
+			$palette_two = $default_palette_color;
+
+			$palette_three = array(
+				$default_palette_color[3],
+				$default_palette_color[2],
+				$default_palette_color[5],
+				$default_palette_color[4],
+				$default_palette_color[0],
+				$default_palette_color[1],
+				$default_palette_color[6],
+				$default_palette_color[7],
+				$default_palette_color[8],
+			);
+
+
+			$color_palettes = array(
+				'style-1' =>
+				array(
+					'slug' => 'style-1',
+					'title' => 'Light',
+					'default_color' => $default_palette_color[5],
+					'colors' => $palette_one,
+				),
+				'style-2' => array(
+					'slug' => 'style-2',
+					'title' => 'Dark',
+					'default_color' => $default_palette_color[4],
+					'colors' => $palette_two,
+				),
+				'style-3' => array(
+					'slug' => 'style-3',
+					'title' => 'Highlight',
+					'default_color' => $default_palette_color[0],
+					'colors' => $palette_three,
+				),
+			);
+
+			return $color_palettes;
 		}
 
 		/**
@@ -2043,11 +2371,11 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 			}
 
 			/* translators: %s are link. */
-			$license_msg = sprintf( __( 'This is a premium template available with Essential Bundle and Business Toolkits. you can purchase it from <a href="%s" target="_blank">here</a>.', 'astra-sites' ), 'https://wpastra.com/starter-templates-plans/' );
+			$license_msg = sprintf( __( 'This is a premium template available with Essential and Business Toolkits. you can purchase it from <a href="%s" target="_blank">here</a>.', 'astra-sites' ), 'https://wpastra.com/starter-templates-plans/' );
 
 			if ( defined( 'ASTRA_PRO_SITES_NAME' ) ) {
 				/* translators: %s are link. */
-				$license_msg = sprintf( __( 'This is a premium template available with Essential Bundle and Business Toolkits. <a href="%s" target="_blank">Validate Your License</a> Key to import this template.', 'astra-sites' ), esc_url( admin_url( 'plugins.php?bsf-inline-license-form=astra-pro-sites' ) ) );
+				$license_msg = sprintf( __( 'This is a premium template available with Essential and Business Toolkits. <a href="%s" target="_blank">Validate Your License</a> Key to import this template.', 'astra-sites' ), esc_url( admin_url( 'plugins.php?bsf-inline-license-form=astra-pro-sites' ) ) );
 			}
 
 			$last_viewed_block_data = array();
@@ -2176,6 +2504,7 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 		private function includes() {
 
 			require_once ASTRA_SITES_DIR . 'inc/classes/functions.php';
+			require_once ASTRA_SITES_DIR . 'inc/classes/class-astra-sites-utils.php';
 			require_once ASTRA_SITES_DIR . 'inc/classes/class-astra-sites-error-handler.php';
 			require_once ASTRA_SITES_DIR . 'inc/classes/class-astra-sites-white-label.php';
 			require_once ASTRA_SITES_DIR . 'inc/classes/class-astra-sites-page.php';
@@ -2328,7 +2657,7 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 						if ( is_plugin_active( $plugin_pro['init'] ) ) {
 							$response['active'][] = $plugin_pro;
 
-							$this->after_plugin_activate( $plugin['init'], $options, $enabled_extensions );
+							$this->after_plugin_activate( $plugin['init'] );
 
 							// Pro - Inactive.
 						} else {
@@ -2381,7 +2710,7 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 						} else {
 							$response['active'][] = $plugin;
 
-							$this->after_plugin_activate( $plugin['init'], $options, $enabled_extensions );
+							$this->after_plugin_activate( $plugin['init'] );
 						}
 					}
 				}
@@ -2708,49 +3037,49 @@ if ( ! class_exists( 'Astra_Sites' ) ) :
 							<div class="text-section">
 								<h1 class="text-heading">' . __( 'Welcome to Starter Templates!', 'astra-sites' ) . '</h1>
 								<p>' . __( 'Create professionally designed pixel-perfect websites in minutes.', 'astra-sites' ) . '</p>
-								<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates" class="text-button">' . __( 'Get Started', 'astra-sites' ) . '</a>
+								<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates" class="text-button">' . __( 'Explore Templates', 'astra-sites' ) . '</a>
 							</div>
 							<div class="showcase-section">
 								<img src="' . esc_url( ASTRA_SITES_URI . 'inc/assets/images/templates-showcase.png' ) . '" />
 							</div>
 						</div>
 						<div class="notice-content-container">
-							<div class="content-section">
+							<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates&ci=4&s=E-Commerce" class="content-section">
 								<div class="icon-section">
 								<img src="' . esc_url( ASTRA_SITES_URI . 'inc/assets/images/dashicons-cart.svg' ) . '" /></div>
 								<div class="link-section">
 									<h4>' . __( 'Ecommerce', 'astra-sites' ) . '</h4>
-									<p>' . __( 'Looking for a fully operational eCommerce template to launch a store or level up an existing one?', 'astra-sites' ) . '</p>
-									<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates&ci=1&s=E-Commerce">' . __( 'View Ecommerce Templates', 'astra-sites' ) . ' →</a>
+									<p>' . __( 'Looking for an eCommerce template to upgrade or launch your store?', 'astra-sites' ) . '</p>
+									<span class="link-text"><span class="title">' . __( 'View Ecommerce Templates', 'astra-sites' ) . '</span><span class="arrow-text">→</span></span>
 								</div>
-							</div>
-							<div class="content-section">
+							</a>
+							<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates&ci=4&s=Business" class="content-section">
 								<div class="icon-section">
 								<img src="' . esc_url( ASTRA_SITES_URI . 'inc/assets/images/dashicons-building.svg' ) . '" /></div>
 								<div class="link-section">
 									<h4>' . __( 'Local Business', 'astra-sites' ) . '</h4>
-									<p>' . __( 'Fully customizable local business templates that can deliver a fully functioning website in minutes', 'astra-sites' ) . '</p>
-									<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates&ci=1&s=Business">' . __( 'View Local Business Templates', 'astra-sites' ) . ' →</a>
+									<p>' . __( 'Easily create a local business website using our customizable templates.', 'astra-sites' ) . '</p>
+									<span class="link-text"><span class="title">' . __( 'View Local Business Templates', 'astra-sites' ) . '</span><span class="arrow-text">→</span></span>
 								</div>
-							</div>
-							<div class="content-section">
+							</a>
+							<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates&ci=4&s=Agency" class="content-section">
 								<div class="icon-section">
 								<img src="' . esc_url( ASTRA_SITES_URI . 'inc/assets/images/dashicons-megaphone.svg' ) . '" /></div>
 								<div class="link-section">
 									<h4>' . __( 'Agency', 'astra-sites' ) . '</h4>
-									<p>' . __( 'Do more in less time with Starter Templates. Pro-quality designs that can be fully customized to suit your clients.', 'astra-sites' ) . '</p>
-									<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates&ci=1&s=Agency">' . __( 'View Agency Templates', 'astra-sites' ) . ' →</a>
+									<p>' . __( 'Save time with customizable Starter Templates for pro-quality designs.', 'astra-sites' ) . '</p>
+									<span class="link-text"><span class="title">' . __( 'View Agency Templates', 'astra-sites' ) . '</span><span class="arrow-text">→</span></span>
 								</div>
-							</div>
-							<div class="content-section">
+							</a>
+							<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates&ci=4&s=Blog" class="content-section">
 								<div class="icon-section">
 								<img src="' . esc_url( ASTRA_SITES_URI . 'inc/assets/images/dashicons-welcome-write-blog.svg' ) . '" /></div>
 								<div class="link-section">
 									<h4>' . __( 'Blog', 'astra-sites' ) . '</h4>
-									<p>' . __( 'Customizable blog templates covering every niche. Page builder compatible, easy to use and fast!', 'astra-sites' ) . '</p>
-									<a href="' . home_url() . '/wp-admin/themes.php?page=starter-templates&ci=1&s=Blog">' . __( 'View Blog Templates', 'astra-sites' ) . ' →</a>
+									<p>' . __( 'Create custom blog templates easily for any niche - fast and user-friendly.', 'astra-sites' ) . '</p>
+									<span class="link-text"><span class="title">' . __( 'View Blog Templates', 'astra-sites' ) . '</span><span class="arrow-text">→</span></span>
 								</div>
-							</div>
+							</a>
 						</div>'
 					),
 				)

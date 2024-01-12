@@ -7,4 +7,19 @@ function theme_enqueue_styles()
     wp_enqueue_style('theme-style', get_stylesheet_directory_uri() . '/css/theme.css', array(), filemtime(get_stylesheet_directory() . '/css/theme.css'));
 }
 
+add_filter('wp_nav_menu_items', 'add_admin_link_to_nav_menu', 10, 2);
+
+function add_admin_link_to_nav_menu($items, $args) {
+    if (is_user_logged_in() && $args->theme_location === 'primary') {
+        $items .= '<li id="admin"><a href="' . esc_url(get_permalink(21)) . '">Admin</a></li>';
+    }
+
+    if ($args->theme_location === 'primary') {
+        $items .= '<li id="commander"><a href="http://localhost/Planty/commander/"></i>Commander</a></li>';
+    }
+
+    return $items;
+}
+
 ?>
+

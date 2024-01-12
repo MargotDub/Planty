@@ -7,27 +7,38 @@ body * {
 
 p {
     color: #000000;
+    margin-bottom: 0;
+    margin-top: 1.75em;
 }
 
-/* HEADER */
+/***** HEADER *****/
+
 .header-footer-group {
     font-weight: 500;
+}
+
+#menu-pied-de-page {
+    margin: 0;
 }
 
 #site-header {
     height: 80px;
     background-color: #FFFFFF;
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
 }
 
 #site-header img {
-    margin-left: 37px;
+    margin: 0 70px 0 37px;
 }
 
 #site-header a {
     color: #000000;
+}
+
+#site-header li {
+    list-style-type: none;
 }
 
 .menu-principal-container ul {
@@ -38,34 +49,40 @@ p {
     margin: 0;
 }
 
-#site-header li {
-    list-style-type: none;
-}
-
-#menu-item-42 a, #menu-item-41 a {
+#menu-item-42 a, #admin a {
     margin-right: 70px;
 }
 
-#menu-item-42 a:hover, #menu-item-41 a:hover {
+#menu-item-42 {
+    width: 100%;
+}
+
+#menu-item-42 a:hover, #admin a:hover {
     font-weight: 600;
 }
 
-#menu-item-40 a {
+#commander a {
     color: #FFFFFF !important;
     background-color: #DC9F96;
     padding: 31px 70px 31px 70px;
     font-weight: 600;
 }
 
-#menu-item-40 a:hover {
+#commander {
+    list-style: none;
+}
+
+#commander a:hover {
     background-color: #C02E44;
+    transition: all .3s;
 }
 
 .secondary a *, .site-footer a *, .site-header a *, a {
     transition: none;
 }
 
-/* FOOTER */
+/***** FOOTER *****/
+
 #site-footer {
     height: 60px;
     background-color: #FFFFFF;
@@ -81,4 +98,261 @@ p {
     color: #000000;
 }
 
+#site-footer a:hover {
+    font-weight: 600;
+}
+
+/***** FORMULAIRE DE CONTACT - Nous contacter *****/
+
+.wpcf7 input:not([type=submit]), .wpcf7 select, .wpcf7 textarea {
+    width: 500px;
+    height: 71px;
+    background-color: white;
+    border-radius: 7px;
+    border: none;
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.04);
+}
+
+.wpcf7 input:not([type=submit]) {
+    margin-top: 10px;
+}
+
+.wpcf7 textarea {
+    height: 237px;
+    margin-top: 10px;
+}
+
+input[type="submit"] {
+    background-color: #E0B9B4;
+    border-radius: 5px;
+    width: 198px;
+    height: 55px;
+    font-weight: 400;
+    font-size: 15px;
+}
+
+.wpcf7-spinner {
+    display: none;
+}
+
+input[type="submit"]:hover,
+input[type="submit"]:focus {
+    background-color: #C02E44;
+    transition: all .3s;
+}
+
+/***** FORMULAIRE DE CONTACT - Précommande *****/
+
+.flex-container-column {
+    max-width: 1140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.flex-container-row {
+    display: flex;
+}
+
+.container1 {
+    padding: 0 60px 0 60px;
+    border-right: 1px solid #FFFFFF ;
+}
+
+.container2 {
+    display: flex;
+    flex-direction: column;
+    padding: 0 60px 0 60px;
+}
+  
+.color-label {
+    color: #FFFFFF;
+}
+
+.margin-submit {
+    padding-top: 50px;
+}
+
+.container1 h2, .container2 h2 {
+    color: #FFFFFF;
+}
+
+/***** PRECOMMANDE *****/
+
+input[type="text"] {
+    width: 39px;
+    height: 56px;
+    background-color: #FFFFFF;
+    border: none;
+    border-radius: 0;
+    text-align: center;
+}
+
+input[type="text"]::placeholder {
+    text-align: center;
+}
+
+input[type="text"]:focus {
+    text-align: center;
+}
+
+
+
+
+/***** RESPONSIVE *****/
+
+/***** COMMANDER *****/
+@media screen and (min-width: 448px) and (max-width: 495px) {
+    .elementor-size-default {
+       font-size: 30px !important;
+    }
+}
+
+@media screen and (min-width: 389px) and (max-width: 448px) {
+    .elementor-size-default {
+       font-size: 27px !important;
+    }
+}
+
+@media screen and (min-width: 320px) and (max-width: 389px) {
+    .elementor-size-default {
+       font-size: 23px !important;
+    }
+}
+
+/***** FORMULAIRE DE CONTACT - Nous contacter *****/
+@media screen and (min-width: 550px) and (max-width: 650px) {
+    .wpcf7 input:not([type=submit]), .wpcf7 select, .wpcf7 textarea {
+        width: 450px;
+    }
+}
+
+@media screen and (min-width: 450px) and (max-width: 550px) {
+    .wpcf7 input:not([type=submit]), .wpcf7 select, .wpcf7 textarea {
+        width: 400px;
+    }
+}
+
+@media screen and (min-width: 320px) and (max-width: 450px) {
+    .wpcf7 input:not([type=submit]), .wpcf7 select, .wpcf7 textarea {
+        width: 100%;
+    }
+}
+
+/***** FORMULAIRE DE CONTACT - Précommande *****/
+@media screen and (min-width: 320px) and (max-width: 1170px) {
+    .flex-container-row {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .container1 {
+        border-right: none;
+        border-bottom: solid 1px #FFFFFF;
+        padding-bottom: 70px;
+    }
+    .container2 {
+        padding-top: 70px;
+    }
+}
+
+@media screen and (min-width: 450px) and (max-width: 1170px) {
+    
+    .container1 {
+        padding-bottom: 80px;
+}
+    .container2 {
+        padding-top: 80px;
+}
+}
+
+@media screen and (min-width: 320px) and (max-width: 450px) {
+    .container1 {
+        padding: 0 20px 50px;
+    }
+    
+    .container2 {
+        padding: 50px 20px 0;
+    }
+}
+
+
+/***** HEADER *****/
+
+/*tablette et mobile*/
+@media screen and (min-width: 320px) and (max-width: 1000px) {
+    #commander a {
+        border: 1px solid #DC9F96;
+    }
+
+    #commander a:hover {
+        border: 1px solid #C02E44;
+    }
+}
+
+
+/*tablette*/
+@media screen and (min-width: 755px) and (max-width: 1000px) {
+    #commander a {
+        padding: 31px 40px 31px 40px;
+    }
+    
+    #menu-item-42 a, #admin a {
+        margin-right: 40px;
+    }
+}
+
+/*mobile*/
+@media screen and (min-width: 320px) and (max-width: 755px) {
+    #site-header img {
+        margin: 0 40px;
+    }
+
+    #site-header {
+        flex-wrap: wrap;
+        justify-content: center !important;
+        height: 150px;
+    }
+}
+
+@media screen and (min-width: 415px) and (max-width: 570px) {
+    #commander a {
+        padding: 31px 40px 31px 40px;
+    }
+
+    #menu-item-42 a, #admin a {
+        margin-right: 31px;
+    }
+}
+
+@media screen and (min-width: 350px) and (max-width: 415px) {
+    #commander a {
+        padding: 27px 18px 27px 18px;
+    }
+
+    #menu-item-42 a, #admin a {
+        margin-right: 18px;
+    }
+}
+
+@media screen and (min-width: 320px) and (max-width: 350px) {
+    #commander a {
+        padding: 27px 10px 27px 10px;
+    }
+
+    #menu-item-42 a, #admin a {
+        margin-right: 10px;
+    }
+}
+
+
+/***** ACCUEIL *****/
+
+/*mobile*/
+@media screen and (min-width: 320px) and (max-width: 768px) {
+
+.wp-image-78, .wp-image-79, .wp-image-80 {
+    margin-bottom: 30px;
+}
+}
 

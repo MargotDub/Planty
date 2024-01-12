@@ -12,6 +12,7 @@ use Gutenberg_Templates\Inc\Traits\Instance;
 use Gutenberg_Templates\Inc\Importer\Importer_Helper;
 use Gutenberg_Templates\Inc\Importer\Plugin;
 use Gutenberg_Templates\Inc\Traits\Helper;
+use Gutenberg_Templates\Inc\Importer\Image_Importer;
 
 /**
  * Sync Library
@@ -33,6 +34,7 @@ class Ai_Content {
 		add_action( 'wp_ajax_ast-block-templates-regenerate', array( $this, 'generate_ai_content' ) );
 		add_action( 'wp_ajax_ast-block-templates-reset-business-details', array( $this, 'reset_business_details' ) );
 		add_action( 'wp_footer', array( $this, 'footer' ) );
+		add_action( 'ast_templates_download_selected_images', array( $this, 'download_selected_images' ) );
 	}
 
 	/**
@@ -374,6 +376,9 @@ class Ai_Content {
 			delete_option( 'ast-templates-ai-content' );
 		}
 
+		// Schedule event to download images in background.
+		wp_schedule_single_event( time() + 1, 'ast_templates_download_selected_images' );
+
 		$images = array();
 		wp_send_json_success(
 			array(
@@ -381,6 +386,40 @@ class Ai_Content {
 				'images' => $image_count < AST_BLOCK_TEMPLATES_IMAGE_COUNT ? array_merge( $images, $all_images['landscape'], $all_images['portrait'] ) : array(),
 			)
 		);
+	}
+
+	/**
+	 * Download Selected Images
+	 *
+	 * @since 2.0.17
+	 *
+	 * @return void
+	 */
+	public function download_selected_images() {
+
+		$image = get_option( 'ast-templates-business-details', array() );
+		$all_images = isset( $image['images'] ) ? $image['images'] : array();
+
+		if ( empty( $all_images ) ) {
+			return;
+		}
+
+		$images = array_merge( $all_images['landscape'], $all_images['portrait'] );
+		$downloaded_ids = array();
+
+		foreach ( $images as $image ) {
+
+			$image = array(
+				'url' => $image['url'],
+				'id'  => $image['id'],
+				'description'  => $image['description'],
+				'engine'  => $image['engine'],
+			);
+			$new_attachment = Image_Importer::instance()->import( $image );
+			$downloaded_ids[ $image['id'] ] = $new_attachment['id'];
+		}
+
+		update_option( 'ast_block_downloaded_images', $downloaded_ids );
 	}
 
 	/**

@@ -67,12 +67,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <header id="site-header" class="header-footer-group">
 
-	<a href="index.php">
-		<img src="wp-content/themes/planty/images/logo.svg" alt="logo Planty">
+	<a href="<?php echo esc_url(home_url('/')); ?>">
+    	<img src="<?php echo esc_url(get_stylesheet_directory_uri()); ?>/images/logo.svg" alt="logo Planty">
 	</a>
 
 	<?php wp_nav_menu([
-		'theme_location' => 'primary'
+		'theme_location' => 'primary',
+		'container' => 'nav',
 ]); ?>
 
 	</header>

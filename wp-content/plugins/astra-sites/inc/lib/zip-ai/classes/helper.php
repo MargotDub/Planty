@@ -268,7 +268,7 @@ class Helper {
 							'nonce'         => wp_create_nonce( 'zip_ai_auth_nonce' ),
 							'scs-authorize' => 'true',
 						),
-						admin_url(),
+						admin_url()
 					),
 				)
 			),
@@ -294,7 +294,7 @@ class Helper {
 						'revoke_zip_ai_authorization_token' => 'definitely',
 					),
 					admin_url(),
-				),
+				)
 			)
 		);
 

@@ -148,6 +148,23 @@ class Helper {
 			return isset( $existing_settings[ $key ] ) ? $existing_settings[ $key ] : $default;
 		}
 	}
+	
+	/**
+	 * Delete an option from the database for.
+	 *
+	 * @param string  $key              The option key.
+	 * @param boolean $network_override Whether to allow the network admin setting to be overridden on subsites.
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public static function delete_admin_settings_option( $key, $network_override = false ) {
+		// Delete the site-wide option if we're in the network admin.
+		if ( $network_override && is_multisite() ) {
+			delete_site_option( $key );
+		} else {
+			delete_option( $key );
+		}
+	}
 
 	/**
 	 * This helper function returns credit details.
@@ -279,7 +296,7 @@ class Helper {
 		return array(
 			'business' => 'Business',
 			'person' => 'Person',
-			'organization' => 'Organization',
+			'organisation' => 'Organisation',
 			'restaurant' => 'Restaurant',
 			'product' => 'Product',
 			'event' => 'Event',

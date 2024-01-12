@@ -149,6 +149,13 @@ class Image_Importer {
 			return $saved_image['attachment'];
 		}
 
+		// Extract the file name and extension from the URL.
+		$filename = basename( $attachment['url'] );
+
+		if ( 'unsplash' === $attachment['engine'] ) {
+			$filename = 'unsplash-photo-' . $attachment['id'] . '.jpg';
+		}
+
 		$file_content = wp_remote_retrieve_body(
 			wp_safe_remote_get(
 				$attachment['url'],
@@ -164,9 +171,6 @@ class Image_Importer {
 			Helper::instance()->ast_block_templates_log( 'BATCH - FAIL Image {Error: Failed wp_remote_retrieve_body} - ' . $attachment['url'] );
 			return $attachment;
 		}
-
-		// Extract the file name and extension from the URL.
-		$filename = basename( $attachment['url'] );
 
 		$upload = wp_upload_bits( $filename, null, $file_content );
 
@@ -185,6 +189,10 @@ class Image_Importer {
 		} else {
 			// For now just return the origin attachment.
 			return $attachment;
+		}
+
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			include ABSPATH . 'wp-admin/includes/image.php';
 		}
 
 		$post_id = wp_insert_attachment( $post, $upload['file'] );
@@ -225,5 +233,4 @@ class Image_Importer {
 
 		return false;
 	}
-
 }

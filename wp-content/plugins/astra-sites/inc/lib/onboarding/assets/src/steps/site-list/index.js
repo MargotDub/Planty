@@ -264,7 +264,7 @@ const SiteList = () => {
 									)
 								}
 							>
-								{ __( 'Get Essential Bundle', 'astra-sites' ) }
+								{ __( 'Get Essential Toolkit', 'astra-sites' ) }
 							</Button>
 						</div>
 					) }

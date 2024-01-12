@@ -51,6 +51,7 @@ class Sync_Library_WP_CLI {
 		}
 		Sync_Library::instance()->process_data_sync( $result_data );
 		Sync_Library::instance()->update_latest_checksums( $result_data['checksum'] );
+		Sync_Library::instance()->get_server_astra_customizer_css();
 
 		// Start Sync.
 		if ( Helper::instance()->ast_block_templates_doing_wp_cli() ) {

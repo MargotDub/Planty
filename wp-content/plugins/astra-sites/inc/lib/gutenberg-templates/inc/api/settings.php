@@ -63,11 +63,11 @@ class Settings extends Api_Base {
 					'callback'            => array( $this, 'save' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args' => array(
-						'disable_ai' => array(
-							'type'     => 'boolean',
+						'key' => array(
+							'type'     => 'string',
 							'required' => true,
 						),
-						'disable_preview' => array(
+						'value' => array(
 							'type'     => 'boolean',
 							'required' => true,
 						),
@@ -134,22 +134,53 @@ class Settings extends Api_Base {
 				)
 			);
 		}
-		$settings = array();
-		$disable_ai = $request->get_param( 'disable_ai' );
-		$disable_preview = $request->get_param( 'disable_preview' );
-		$settings['disable_ai'] = $disable_ai;
-		$settings['disable_preview'] = $disable_preview;
-		$status = update_option( 'ast_block_templates_ai_settings', $settings );
 
-		$blocks = Plugin::instance()->get_all_blocks();
+		$setting_key = $request->get_param( 'key' );
+		$setting_value = $request->get_param( 'value' );
 
-		$response = new \WP_REST_Response(
-			array(
-				'success' => $status,
-				'blocks'  => $blocks,
-			)
+		if ( ! empty( $setting_key ) ) {
+			$settings = get_option( 'ast_block_templates_ai_settings', array() );
+			$settings[ $setting_key ] = $setting_value;
+
+			if ( 'disable_ai' === $setting_key ) {
+	
+				$ai_settings = get_option( 'zip_ai_modules', array() );
+				$ai_copilot_value = $setting_value ? 'disabled' : 'enabled';
+				$ai_settings['ai_design_copilot']['status'] = $ai_copilot_value;
+				update_option( 'zip_ai_modules', $ai_settings );
+
+				$settings['disable_ai'] = $setting_value;
+			}
+
+			if ( 'adaptive_mode' === $setting_key ) {
+				$ai_settings = get_option( 'zip_ai_modules', array() );
+				$ai_copilot_value = $setting_value ? 'enabled' : 'disabled';
+				$ai_settings['ai_design_copilot']['status'] = $ai_copilot_value;
+				update_option( 'zip_ai_modules', $ai_settings );
+
+				$settings['disable_ai'] = ! $setting_value;
+			}
+
+			$status = update_option( 'ast_block_templates_ai_settings', $settings );
+
+			$blocks = Plugin::instance()->get_all_blocks();
+
+			$response = new \WP_REST_Response(
+				array(
+					'success' => $status,
+					'blocks'  => $blocks,
+				)
+			);
+
+			$response->set_status( 200 );
+			return $response;
+		}
+
+		
+		return new \WP_Error(
+			'failed',
+			__( 'Sorry, settings are not saved.', 'ast-block-templates' ),
+			array( 'status' => 'fail' )
 		);
-		$response->set_status( 200 );
-		return $response;
 	}
 }

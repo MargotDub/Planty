@@ -10,7 +10,7 @@ namespace Gutenberg_Templates\Inc\Block;
 /**
  * Spectra_AI_Block
  *
- * @since x.x.x
+ * @since 2.0.16
  */
 class Spectra_AI_Block {
 	/**
@@ -18,14 +18,14 @@ class Spectra_AI_Block {
 	 *
 	 * @access private
 	 * @var object Class Instance.
-	 * @since x.x.x
+	 * @since 2.0.16
 	 */
 	private static $instance = null;
 
 	/**
 	 * Constructor
 	 *
-	 * @since x.x.x
+	 * @since 2.0.16
 	 */
 	public function __construct() {
 		global $wp_version;
@@ -38,7 +38,7 @@ class Spectra_AI_Block {
 	/**
 	 * Get Instance
 	 *
-	 * @since x.x.x
+	 * @since 2.0.16
 	 *
 	 * @return object Class object.
 	 */
@@ -53,7 +53,7 @@ class Spectra_AI_Block {
 	/**
 	 * Register Block Type
 	 *
-	 * @since x.x.x
+	 * @since 2.0.16
 	 *
 	 * @return void
 	 */
@@ -64,7 +64,7 @@ class Spectra_AI_Block {
 	/**
 	 * Add the block on new page creation.
 	 *
-	 * @since x.x.x
+	 * @since 2.0.16
 	 *
 	 * @param array<string, string> $paths   Array of preload paths.
 	 * @param mixed                 $context Context of the request.
@@ -110,7 +110,7 @@ class Spectra_AI_Block {
 	/**
 	 * Remove broken p tags.
 	 *
-	 * @since x.x.x
+	 * @since 2.0.16
 	 *
 	 * @param string $content Post content.
 	 *

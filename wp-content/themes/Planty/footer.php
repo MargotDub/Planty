@@ -34,7 +34,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 <footer id="site-footer" class="header-footer-group">
 
 	<?php wp_nav_menu ([
-		'theme-location' => 'footer'
+		'theme-location' => 'footer_menu',
+		'container' => 'nav',
 ]) ?>
 
 </footer>
